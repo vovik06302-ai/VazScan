@@ -339,7 +339,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         reports.remove(r)
     }
 
-    fun setVoice(on: Boolean) {
+    fun switchVoice(on: Boolean) {
         voice = on
         speaker.enabled = on
     }

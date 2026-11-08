@@ -352,7 +352,7 @@ fun ScanScreen(vm: MainViewModel) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Голосовые подсказки", modifier = Modifier.weight(1f))
-                        Switch(checked = vm.voice, onCheckedChange = { vm.setVoice(it) })
+                        Switch(checked = vm.voice, onCheckedChange = { vm.switchVoice(it) })
                     }
                     OutlinedButton(onClick = { vm.speakResult() }, enabled = vm.result != null, modifier = Modifier.fillMaxWidth()) {
                         Text("Озвучить результат")
