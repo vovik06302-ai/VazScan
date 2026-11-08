@@ -243,7 +243,7 @@ fun ConnectScreen(vm: MainViewModel) {
 }
 
 @Composable
-fun DtcCard(code: String, kind: String) {
+fun DtcCard(code: String, kind: String, freeze: FreezeFrame? = null) {
     val info = remember(code) { DtcDb.lookup(code) }
     var open by remember { mutableStateOf(false) }
     Card(Modifier.fillMaxWidth().clickable { open = !open }) {
@@ -257,6 +257,8 @@ fun DtcCard(code: String, kind: String) {
             }
             Text(info.title)
             if (open) {
+                Text("Что было в момент ошибки", fontWeight = FontWeight.Bold)
+                FaultContext.explain(code, freeze).forEach { Text("• $it", fontSize = 14.sp) }
                 if (info.causes.isNotEmpty()) {
                     Text("Возможные причины", fontWeight = FontWeight.Bold)
                     info.causes.forEachIndexed { i, c -> Text("${i + 1}. $c") }
@@ -287,12 +289,12 @@ fun FindingCard(x: Finding) {
     }
 }
 
-fun LazyListScope.dtcSection(title: String, codes: List<String>, kind: String) {
+fun LazyListScope.dtcSection(title: String, codes: List<String>, kind: String, freeze: FreezeFrame? = null) {
     item { Text(title, style = MaterialTheme.typography.titleMedium) }
     if (codes.isEmpty()) {
         item { Text("Нет", color = GREEN) }
     } else {
-        items(codes) { DtcCard(it, kind) }
+        items(codes) { DtcCard(it, kind, freeze) }
     }
 }
 
@@ -375,9 +377,9 @@ fun ScanScreen(vm: MainViewModel) {
                 item { Text("Выводы", style = MaterialTheme.typography.titleMedium) }
                 items(r.analysis.findings) { FindingCard(it) }
             }
-            dtcSection("Сохранённые ошибки", r.stored, "сохранённая")
-            dtcSection("Ожидающие ошибки", r.pending, "ожидающая")
-            if (r.permanent.isNotEmpty()) dtcSection("Постоянные ошибки", r.permanent, "постоянная")
+            dtcSection("Сохранённые ошибки", r.stored, "сохранённая", r.freeze)
+            dtcSection("Ожидающие ошибки", r.pending, "ожидающая", r.freeze)
+            if (r.permanent.isNotEmpty()) dtcSection("Постоянные ошибки", r.permanent, "постоянная", r.freeze)
             item {
                 Button(onClick = { shareText(ctx, r.text) }, modifier = Modifier.fillMaxWidth()) {
                     Text("Поделиться отчётом")
@@ -416,9 +418,9 @@ fun ErrorsScreen(vm: MainViewModel) {
         if (!vm.connected) item { Text("Нет подключения к адаптеру.") }
         if (vm.errorsRead) {
             vm.readiness?.let { item { ReadinessCard(it) } }
-            dtcSection("Сохранённые ошибки", vm.stored, "сохранённая")
-            dtcSection("Ожидающие ошибки", vm.pending, "ожидающая")
-            if (vm.permanent.isNotEmpty()) dtcSection("Постоянные ошибки", vm.permanent, "постоянная")
+            dtcSection("Сохранённые ошибки", vm.stored, "сохранённая", vm.freeze)
+            dtcSection("Ожидающие ошибки", vm.pending, "ожидающая", vm.freeze)
+            if (vm.permanent.isNotEmpty()) dtcSection("Постоянные ошибки", vm.permanent, "постоянная", vm.freeze)
             vm.freeze?.let { ff ->
                 item {
                     Card(Modifier.fillMaxWidth()) {

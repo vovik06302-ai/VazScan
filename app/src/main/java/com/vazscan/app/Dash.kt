@@ -1,4 +1,4 @@
-﻿package com.vazscan.app
+package com.vazscan.app
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -290,7 +289,7 @@ private val scopeSpecs = listOf(
 fun LiveScreen(vm: MainViewModel) {
     val dashPids = remember(vm.supported) { vm.supported.filter { Pids.byId.containsKey(it) }.sorted() }
     val running = (vm.live[0x0C] ?: 0.0) > 400
-    val alarms = alarmsFor(vm.live, vm.liveHistory)
+    val alarms = (alarmsFor(vm.live, vm.liveHistory) + dtcAlarms(vm.stored)).sortedByDescending { it.level }
     val tiles = Pids.all.filter { dashPids.contains(it.pid) }
 
     LazyColumn(
@@ -307,6 +306,7 @@ fun LiveScreen(vm: MainViewModel) {
         }
         if (!vm.connected) item { Text("Нет подключения к адаптеру.") }
         item { AlarmBanner(alarms, vm.liveRunning) }
+        item { CoverageCard(vm.supported, vm.stored) }
 
         item { Text("Приборы", style = MaterialTheme.typography.titleMedium) }
         items(gaugeSpecs.chunked(2)) { pair ->
@@ -356,4 +356,3 @@ fun LiveScreen(vm: MainViewModel) {
         }
     }
 }
-
