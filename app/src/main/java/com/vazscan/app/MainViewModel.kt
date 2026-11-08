@@ -23,8 +23,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var adapter by mutableStateOf<AdapterInfo?>(null)
     var supported by mutableStateOf<Set<Int>>(emptySet())
     var vin by mutableStateOf<String?>(null)
+    var vehicleInfo by mutableStateOf<VehicleInfo?>(null)
     var demo by mutableStateOf(false)
-    var vehicle by mutableStateOf("ВАЗ 2112 (1.5, 8 кл.)")
+    var vehicle by mutableStateOf("Автомобиль не определён")
     var error by mutableStateOf<String?>(null)
     var info by mutableStateOf<String?>(null)
 
@@ -105,6 +106,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 if (i.ecuResponds) {
                     supported = c.supportedPids()
                     vin = c.readVin()
+                    vehicleInfo = VinDecoder.build(vin, c.readOdometer(), c.readMode09Text(0x0A), c.readMode09Text(0x04))
+                    vehicle = vehicleInfo?.displayName() ?: "Автомобиль не определён"
                 }
             } catch (e: Exception) {
                 error = "Ошибка подключения: ${e.message}"
@@ -134,6 +137,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         adapter = null
         supported = emptySet()
         vin = null
+        vehicleInfo = null
+        vehicle = "Автомобиль не определён"
         demo = false
         status = "Не подключено"
     }

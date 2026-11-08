@@ -127,6 +127,7 @@ class DemoTransport : ObdTransport {
             0x15 -> b1((0.65 + n * 0.02) * 200) + "FF"
             0x1F -> b2(1260.0 + tick)
             0x21 -> b2(42.0)
+            0xA6 -> "%08X".format(123456 * 10)
             0x42 -> b2((14.02 + n * 0.03) * 1000)
             else -> null
         }
@@ -155,7 +156,8 @@ class DemoTransport : ObdTransport {
                 cleared = true
                 "44\r"
             }
-            c == "0902" -> "NO DATA\r"
+            c == "0902" -> "490201" + "XTA21120081234567".map { "%02X".format(it.code) }.joinToString("") + "\r"
+            c == "090A" -> "490A01" + "ECU-DEMO".map { "%02X".format(it.code) }.joinToString("") + "\r"
             c == "020200" -> (if (cleared) "NO DATA" else "4202000171") + "\r"
             c.length == 6 && c.startsWith("02") && c.endsWith("00") -> {
                 val pid = c.substring(2, 4).toInt(16)

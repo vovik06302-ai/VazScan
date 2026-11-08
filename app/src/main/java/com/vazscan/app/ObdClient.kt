@@ -224,4 +224,26 @@ class ObdClient(private val t: ObdTransport) {
         } catch (e: Exception) {
             null
         }
+
+    /** Пробег из стандартного PID 01 A6 (одометр), в км. null, если ЭБУ не отдаёт. */
+    fun readOdometer(): Double? = try {
+        readPid(0xA6)?.let { d ->
+            if (d.size >= 4) ((d[0].toLong() shl 24) or (d[1].toLong() shl 16) or (d[2].toLong() shl 8) or d[3].toLong()) / 10.0
+            else null
+        }
+    } catch (e: IOException) {
+        null
+    }
+
+    /** Текст из Mode 09 (например, 0A - имя ЭБУ, 04 - ID калибровки). */
+    fun readMode09Text(pid: Int): String? {
+        val header = "49%02X".format(pid)
+        val sb = StringBuilder()
+        for (line in hexLines("09%02X".format(pid), 5000)) {
+            val s = line.replace(" ", "")
+            val bytes = toInts(if (s.startsWith(header)) s.substring(6) else s.substring(2))
+            for (b in bytes) if (b in 0x20..0x7E) sb.append(b.toChar())
+        }
+        return sb.toString().trim().ifEmpty { null }
+    }
 }

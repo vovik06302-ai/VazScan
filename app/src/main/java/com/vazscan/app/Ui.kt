@@ -187,6 +187,8 @@ fun ConnectScreen(vm: MainViewModel) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item { StatusCard(vm) }
+        item { UpdateCard() }
+        vm.vehicleInfo?.let { v -> item { VehicleCard(v) } }
         if (!vm.connected) {
             item {
                 Card(Modifier.fillMaxWidth()) {
@@ -466,56 +468,6 @@ fun Sparkline(data: List<Double>, color: Color, modifier: Modifier = Modifier) {
             if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
         }
         drawPath(path, color, style = Stroke(width = 3f))
-    }
-}
-
-@Composable
-fun LiveScreen(vm: MainViewModel) {
-    val selected = remember { mutableStateListOf<Int>() }
-    LaunchedEffect(vm.supported) {
-        if (selected.isEmpty()) {
-            selected.addAll(listOf(0x0C, 0x05, 0x06, 0x07, 0x14, 0x42).filter { vm.supported.contains(it) })
-        }
-    }
-    val defs = Pids.all.filter { vm.supported.contains(it.pid) }
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item {
-            Button(
-                onClick = { if (vm.liveRunning) vm.stopLive() else vm.startLive(selected.toList()) },
-                enabled = vm.connected && !vm.scanning && !vm.working && (vm.liveRunning || selected.isNotEmpty()),
-                modifier = Modifier.fillMaxWidth()
-            ) { Text(if (vm.liveRunning) "Остановить" else "Запустить опрос") }
-        }
-        if (!vm.connected) item { Text("Нет подключения к адаптеру.") }
-        else if (defs.isEmpty()) item { Text("ЭБУ не сообщил ни об одном поддерживаемом параметре.") }
-        else item { Text("Отметьте параметры. Чем их меньше, тем чаще обновляются значения.", fontSize = 12.sp, color = GRAY) }
-        items(defs, key = { it.pid }) { d ->
-            val isSel = selected.contains(d.pid)
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = isSel, onCheckedChange = { on ->
-                            if (on) selected.add(d.pid) else selected.remove(d.pid)
-                        })
-                        Text(d.name, modifier = Modifier.weight(1f), fontSize = 14.sp)
-                        val v = vm.live[d.pid]
-                        Text(
-                            if (v != null) "${Pids.format(d, v)} ${d.unit}" else "—",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                    }
-                    val h = vm.liveHistory[d.pid]
-                    if (isSel && h != null && h.size > 1) {
-                        Sparkline(h, MaterialTheme.colorScheme.primary, Modifier.fillMaxWidth().height(40.dp).padding(bottom = 4.dp))
-                    }
-                }
-            }
-        }
     }
 }
 
