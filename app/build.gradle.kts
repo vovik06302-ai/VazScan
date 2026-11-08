@@ -4,6 +4,9 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Номер сборки берётся из GitHub Actions: каждый пуш даёт большее число
+val runNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+
 android {
     namespace = "com.vazscan.app"
     compileSdk = 34
@@ -12,13 +15,23 @@ android {
         applicationId = "com.vazscan.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = runNumber
+        versionName = "1.0.$runNumber"
+    }
+
+    signingConfigs {
+        create("vaz") {
+            storeFile = file("vazscan.jks")
+            storePassword = "vazscan2026"
+            keyAlias = "vazscan"
+            keyPassword = "vazscan2026"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("vaz")
         }
     }
     compileOptions {
@@ -30,6 +43,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
