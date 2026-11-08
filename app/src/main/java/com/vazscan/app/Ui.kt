@@ -47,9 +47,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -103,11 +106,17 @@ fun btPermission(ctx: Context): Boolean =
 @Composable
 fun AppRoot(vm: MainViewModel) {
     val dark = isSystemInDarkTheme()
-    MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+    MaterialTheme(colorScheme = if (dark) vazDark() else vazLight()) {
         var tab by remember { mutableIntStateOf(0) }
         val tabs = listOf("Подключение", "Диагностика", "Ошибки", "Датчики", "История", "Терминал")
         Scaffold(
-            topBar = { TopAppBar(title = { Text("VAZ Scan") }) }
+            topBar = {
+                TopAppBar(
+                    title = { Text("VAZ Scan", color = Color.White, fontWeight = FontWeight.Bold) },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    modifier = Modifier.background(Brush.horizontalGradient(listOf(VazTeal, VazViolet)))
+                )
+            }
         ) { pad ->
             Column(Modifier.padding(pad).fillMaxSize()) {
                 ScrollableTabRow(selectedTabIndex = tab, edgePadding = 8.dp) {
@@ -337,6 +346,19 @@ fun ScanScreen(vm: MainViewModel) {
                 enabled = vm.connected && !vm.scanning && !vm.working,
                 modifier = Modifier.fillMaxWidth()
             ) { Text(if (vm.scanning) "Идёт диагностика…" else "Полная диагностика") }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Голосовые подсказки", modifier = Modifier.weight(1f))
+                        Switch(checked = vm.voice, onCheckedChange = { vm.setVoice(it) })
+                    }
+                    OutlinedButton(onClick = { vm.speakResult() }, enabled = vm.result != null, modifier = Modifier.fillMaxWidth()) {
+                        Text("Озвучить результат")
+                    }
+                }
+            }
         }
         if (!vm.connected) {
             item { Text("Сначала подключитесь к адаптеру на вкладке «Подключение». Для лучшего результата заведите двигатель и прогрейте его.") }

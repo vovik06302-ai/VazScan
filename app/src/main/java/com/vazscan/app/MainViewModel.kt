@@ -28,6 +28,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var vehicle by mutableStateOf("Автомобиль не определён")
     var error by mutableStateOf<String?>(null)
     var info by mutableStateOf<String?>(null)
+    var voice by mutableStateOf(true)
 
     // --- терминал ---
     val terminal = mutableStateListOf<String>()
@@ -56,6 +57,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val reports = mutableStateListOf<SavedReport>()
 
     private var client: ObdClient? = null
+    private val speaker = Speaker(app)
+    private val spoken = HashSet<String>()
     private var liveJob: Job? = null
     private val store = ReportStore(File(app.filesDir, "reports"))
 
@@ -177,6 +180,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     for ((p, v) in m) {
                         liveHistory[p] = (liveHistory[p] ?: emptyList()).takeLast(59) + v
                     }
+                    if (voice) speakNewAlarms()
                 }
             } catch (e: Exception) {
                 markLost(e)
@@ -307,6 +311,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 )
                 val res = ScanResult(now, vehicle, adapter, vin, st, pe, pm, rd, ff, snaps, lam, analysis, text)
                 result = res
+                if (voice) speaker.say(Phrases.scan(res))
                 stored = st
                 pending = pe
                 permanent = pm
@@ -334,8 +339,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         reports.remove(r)
     }
 
+    fun setVoice(on: Boolean) {
+        voice = on
+        speaker.enabled = on
+    }
+
+    fun speakResult() {
+        result?.let { speaker.say(Phrases.scan(it)) }
+    }
+
+    /** Озвучивает каждую красную тревогу один раз, пока она не исчезнет. */
+    private fun speakNewAlarms() {
+        val now = alarmsFor(live, liveHistory).filter { it.level == 2 }
+        for (a in now) if (spoken.add(a.name)) speaker.say("Тревога. ${a.name}. ${a.text}")
+        spoken.retainAll(now.map { it.name }.toSet())
+    }
+
     override fun onCleared() {
         disconnect()
+        speaker.shutdown()
         super.onCleared()
     }
 }
